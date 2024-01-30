@@ -18,7 +18,8 @@ typedef PinBoxDecoration = BoxDecoration Function(
 /// class to provide some standard PinBoxDecoration such as standard box or underlined
 class ProvidedPinBoxDecoration {
   /// Default BoxDecoration
-  static PinBoxDecoration defaultPinBoxDecoration = (Color borderColor,
+  static PinBoxDecoration defaultPinBoxDecoration = (
+      Color borderColor,
       Color pinBoxColor, {
         double borderWidth = 2.0,
         double radius = 5.0,
@@ -33,10 +34,11 @@ class ProvidedPinBoxDecoration {
   };
 
   /// Underlined BoxDecoration
-  static PinBoxDecoration underlinedPinBoxDecoration = (Color borderColor,
+  static PinBoxDecoration underlinedPinBoxDecoration = (
+      Color borderColor,
       Color pinBoxColor, {
         double borderWidth = 2.0,
-        double radius,
+        double radius = 0,
       }) {
     return BoxDecoration(
       border: Border(
@@ -48,10 +50,11 @@ class ProvidedPinBoxDecoration {
     );
   };
 
-  static PinBoxDecoration roundedPinBoxDecoration = (Color borderColor,
+  static PinBoxDecoration roundedPinBoxDecoration = (
+      Color borderColor,
       Color pinBoxColor, {
         double borderWidth = 2.0,
-        double radius,
+        double radius = 0,
       }) {
     return BoxDecoration(
       border: Border.all(
@@ -107,33 +110,33 @@ class ProvidedPinBoxTextAnimation {
 class PinCodeTextField extends StatefulWidget {
   final bool isCupertino;
   final int maxLength;
-  final TextEditingController controller;
+  final TextEditingController? controller;
   final bool hideCharacter;
   final bool highlight;
   final bool highlightAnimation;
   final Color highlightAnimationBeginColor;
   final Color highlightAnimationEndColor;
-  final Duration highlightAnimationDuration;
+  final Duration? highlightAnimationDuration;
   final Color highlightColor;
   final Color defaultBorderColor;
   final Color pinBoxColor;
-  final Color highlightPinBoxColor;
+  final Color? highlightPinBoxColor;
   final double pinBoxBorderWidth;
   final double pinBoxRadius;
   final bool hideDefaultKeyboard;
-  final PinBoxDecoration pinBoxDecoration;
+  final PinBoxDecoration? pinBoxDecoration;
   final String maskCharacter;
-  final TextStyle pinTextStyle;
+  final TextStyle? pinTextStyle;
   final double pinBoxHeight;
   final double pinBoxWidth;
   final OnDone? onDone;
   final bool hasError;
   final Color errorBorderColor;
   final Color hasTextBorderColor;
-  final Function(String) onTextChanged;
+  final Function(String)? onTextChanged;
   final bool autofocus;
-  final FocusNode focusNode;
-  final AnimatedSwitcherTransitionBuilder pinTextAnimatedSwitcherTransition;
+  final FocusNode? focusNode;
+  final AnimatedSwitcherTransitionBuilder? pinTextAnimatedSwitcherTransition;
   final Duration pinTextAnimatedSwitcherDuration;
   final WrapAlignment wrapAlignment;
   final TextDirection textDirection;
@@ -142,7 +145,7 @@ class PinCodeTextField extends StatefulWidget {
   final bool hasUnderline;
 
   const PinCodeTextField({
-    Key key,
+    Key? key,
     this.isCupertino: false,
     this.maxLength: 4,
     this.controller,
@@ -172,7 +175,7 @@ class PinCodeTextField extends StatefulWidget {
     this.textDirection: TextDirection.ltr,
     this.keyboardType: TextInputType.number,
     this.pinBoxOuterPadding = const EdgeInsets.symmetric(horizontal: 4.0),
-    this.pinBoxColor,
+    this.pinBoxColor = Colors.white,
     this.highlightPinBoxColor,
     this.pinBoxBorderWidth = 2.0,
     this.pinBoxRadius = 0,
@@ -188,14 +191,13 @@ class PinCodeTextField extends StatefulWidget {
 
 class PinCodeTextFieldState extends State<PinCodeTextField>
     with SingleTickerProviderStateMixin {
-  AnimationController _highlightAnimationController;
-  Animation _highlightAnimationColorTween;
-  FocusNode focusNode;
+  AnimationController? _highlightAnimationController;
+  Animation? _highlightAnimationColorTween;
+  FocusNode? focusNode;
   String text = "";
   int currentIndex = 0;
   List<String> strList = [];
   bool hasFocus = false;
-  double screenWidth;
 
   @override
   void didUpdateWidget(PinCodeTextField oldWidget) {
@@ -236,22 +238,25 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
   void initState() {
     super.initState();
     if (widget.highlightAnimation) {
-      _highlightAnimationController = AnimationController(
+      var highlightAnimationController = AnimationController(
           vsync: this,
           duration:
           widget.highlightAnimationDuration ?? Duration(milliseconds: 500));
-      _highlightAnimationController.addStatusListener((status) {
+      var animationController = highlightAnimationController;
+
+      highlightAnimationController.addStatusListener((status) {
         if (status == AnimationStatus.completed) {
-          _highlightAnimationController.reverse();
+          highlightAnimationController.reverse();
         } else if (status == AnimationStatus.dismissed) {
-          _highlightAnimationController.forward();
+          highlightAnimationController.forward();
         }
       });
       _highlightAnimationColorTween = ColorTween(
           begin: widget.highlightAnimationBeginColor,
           end: widget.highlightAnimationEndColor)
-          .animate(_highlightAnimationController);
-      _highlightAnimationController.forward();
+          .animate(animationController);
+      highlightAnimationController.forward();
+      _highlightAnimationController = highlightAnimationController;
     }
     focusNode = widget.focusNode ?? FocusNode();
 
@@ -266,9 +271,9 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
       setState(() {
         _initTextController();
       });
-
-      if (widget.onTextChanged != null) {
-        widget.onTextChanged(widget.controller.text);
+      var onTextChanged = widget.onTextChanged;
+      if (onTextChanged != null) {
+        onTextChanged(widget.controller?.text ?? "");
       }
     }
   }
@@ -276,7 +281,7 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
   void _focusListener() {
     if (mounted == true) {
       setState(() {
-        hasFocus = focusNode.hasFocus;
+        hasFocus = focusNode?.hasFocus ?? false;
       });
     }
   }
@@ -286,13 +291,12 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
       return;
     }
     strList.clear();
-    if (widget.controller.text.isNotEmpty) {
-      if (widget.controller.text.length > widget.maxLength) {
+    var text = widget.controller?.text ?? "";
+    if (text.isNotEmpty) {
+      if (text.length > widget.maxLength) {
         throw Exception("TextEditingController length exceeded maxLength!");
       }
     }
-
-    text = widget.controller.text;
     for (var i = 0; i < text.length; i++) {
       strList.add(widget.hideCharacter ? widget.maskCharacter : text[i]);
     }
@@ -303,13 +307,11 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
     for (var i = 0; i < widget.maxLength; i++) {
       width += widget.pinBoxWidth;
       if (i == 0) {
-        width += widget.pinBoxOuterPadding?.left ?? 0;
+        width += widget.pinBoxOuterPadding.left;
       } else if (i + 1 == widget.maxLength) {
-        width += widget.pinBoxOuterPadding?.right ?? 0;
+        width += widget.pinBoxOuterPadding.right;
       } else {
-        width += widget.pinBoxOuterPadding?.left ??
-            0 + widget.pinBoxOuterPadding?.right ??
-            0;
+        width += widget.pinBoxOuterPadding.left;
       }
     }
     return width;
@@ -322,7 +324,7 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
       // in focus node as it's owned by the parent not this child widget.
       focusNode?.dispose();
     } else {
-      focusNode.removeListener(_focusListener);
+      focusNode?.removeListener(_focusListener);
     }
     _highlightAnimationController?.dispose();
     widget.controller?.removeListener(_controllerListener);
@@ -370,13 +372,14 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
       width: _width,
       height: widget.pinBoxHeight,
       child: TextField(
+        autofillHints: const <String>[AutofillHints.oneTimeCode],
         autofocus: !kIsWeb ? widget.autofocus : false,
         enableInteractiveSelection: false,
         focusNode: focusNode,
         controller: widget.controller,
         keyboardType: widget.keyboardType,
         inputFormatters: widget.keyboardType == TextInputType.number
-            ? <TextInputFormatter>[WhitelistingTextInputFormatter.digitsOnly]
+            ? <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly]
             : null,
         style: TextStyle(
           height: 0.1, color: Colors.transparent,
@@ -411,12 +414,13 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
       width: _width,
       height: widget.pinBoxHeight,
       child: CupertinoTextField(
+        autofillHints: const <String>[AutofillHints.oneTimeCode],
         autofocus: !kIsWeb ? widget.autofocus : false,
         focusNode: focusNode,
         controller: widget.controller,
         keyboardType: widget.keyboardType,
         inputFormatters: widget.keyboardType == TextInputType.number
-            ? <TextInputFormatter>[WhitelistingTextInputFormatter.digitsOnly]
+            ? <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly]
             : null,
         style: TextStyle(
           color: Colors.transparent,
@@ -434,14 +438,13 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
   }
 
   void _onTextChanged(text) {
-    if (widget.onTextChanged != null) {
-      widget.onTextChanged(text);
+    var onTextChanged = widget.onTextChanged;
+    if (onTextChanged != null) {
+      onTextChanged(text);
     }
     setState(() {
       this.text = text;
-      if (text.length < currentIndex) {
-        strList[text.length] = "";
-      } else {
+      if (text.length >= currentIndex) {
         for (int i = currentIndex; i < text.length; i++) {
           strList[i] = widget.hideCharacter ? widget.maskCharacter : text[i];
         }
@@ -450,7 +453,10 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
     });
     if (text.length == widget.maxLength) {
       FocusScope.of(context).requestFocus(FocusNode());
-      widget.onDone?.call(text);
+      var onDone = widget.onDone;
+      if (onDone != null) {
+        onDone(text);
+      }
     }
   }
 
@@ -470,20 +476,24 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
 
   Widget _buildPinCode(int i, BuildContext context) {
     Color borderColor;
-    Color pinBoxColor;
+    Color pinBoxColor = widget.pinBoxColor;
     BoxDecoration boxDecoration;
+    var highlightPinBoxColor = widget.highlightPinBoxColor;
+    var highlightAnimationController = _highlightAnimationController;
     if (widget.hasError) {
       borderColor = widget.errorBorderColor;
-    } else if (widget.highlightAnimation && _shouldHighlight(i)) {
-      pinBoxColor = widget.pinBoxColor;
+    } else if (widget.highlightAnimation &&
+        _shouldHighlight(i) &&
+        highlightAnimationController != null) {
       return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4.0),
           child: AnimatedBuilder(
-              animation: _highlightAnimationController,
-              builder: (BuildContext context, Widget child) {
-                if (widget.pinBoxDecoration != null) {
-                  boxDecoration = widget.pinBoxDecoration(
-                    _highlightAnimationColorTween.value,
+              animation: highlightAnimationController,
+              builder: (BuildContext context, Widget? child) {
+                var pinBoxDecoration = widget.pinBoxDecoration;
+                if (pinBoxDecoration != null) {
+                  boxDecoration = pinBoxDecoration(
+                    _highlightAnimationColorTween?.value,
                     pinBoxColor,
                     borderWidth: widget.pinBoxBorderWidth,
                     radius: widget.pinBoxRadius,
@@ -491,7 +501,7 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
                 } else {
                   boxDecoration =
                       ProvidedPinBoxDecoration.defaultPinBoxDecoration(
-                        _highlightAnimationColorTween.value,
+                        _highlightAnimationColorTween?.value,
                         pinBoxColor,
                         borderWidth: widget.pinBoxBorderWidth,
                         radius: widget.pinBoxRadius,
@@ -508,17 +518,21 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
               }));
     } else if (widget.highlight && _shouldHighlight(i)) {
       borderColor = widget.highlightColor;
-      pinBoxColor = widget.highlightPinBoxColor;
+      if (highlightPinBoxColor != null) {
+        pinBoxColor = highlightPinBoxColor;
+      }
     } else if (i < text.length) {
       borderColor = widget.hasTextBorderColor;
-      pinBoxColor = widget.highlightPinBoxColor;
+      if (highlightPinBoxColor != null) {
+        pinBoxColor = highlightPinBoxColor;
+      }
     } else {
       borderColor = widget.defaultBorderColor;
       pinBoxColor = widget.pinBoxColor;
     }
-
-    if (widget.pinBoxDecoration != null) {
-      boxDecoration = widget.pinBoxDecoration(
+    var pinBoxDecoration = widget.pinBoxDecoration;
+    if (pinBoxDecoration != null) {
+      boxDecoration = pinBoxDecoration(
         borderColor,
         pinBoxColor,
         borderWidth: widget.pinBoxBorderWidth,
@@ -560,7 +574,11 @@ class PinCodeTextFieldState extends State<PinCodeTextField>
             child: Center(child: _animatedTextBox(strList[i], i)),
             decoration: widget.hasUnderline
                 ? BoxDecoration(
-              border: Border(bottom: BorderSide(color: borderColor ?? Colors.black,),),
+              border: Border(
+                bottom: BorderSide(
+                  color: borderColor,
+                ),
+              ),
             )
                 : null,
           ),
